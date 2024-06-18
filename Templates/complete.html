@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processamento Completo</title>
+    <style>
+        .data {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data th, .data td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Processamento Completo</h1>
+    <p>O processamento foi concluído com sucesso.</p>
+    <h2>Resultados</h2>
+    {{ tables|safe }}
+    <br>
+    <a href="{{ download_link }}">Baixar Arquivo Excel</a>
+    <br><br>
+    <form action="/" method="get">
+        <input type="submit" value="Voltar para página principal">
+    </form>
+</body>
+</html>
