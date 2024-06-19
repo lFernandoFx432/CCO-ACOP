@@ -2,16 +2,18 @@
 <html>
 <head>
     <title>Checagem de penalizações</title>
+    <link rel="stylesheet" type="text/css" href="static/index.css">
 </head>
 <body>
-    <h1>Checagem de penalizações</h1>
+    <img src="static/logo.png" alt="Logo" class="logo">
     <form action="/processar" method="post">
+        <h1>Checagem de penalizações</h1>
         <label for="token">Token de Autorização:</label>
-        <input type="text" id="token" name="token" style="width: 1300px;" required><br><br>
-        <label for="data_inicio">Data de Início (DD/MM/YYYY):</label>
-        <input type="text" id="data_inicio" name="data_inicio" required><br><br>
-        <label for="data_fim">Data de Fim (DD/MM/YYYY):</label>
-        <input type="text" id="data_fim" name="data_fim" required><br><br>
+        <input type="text" id="token" name="token" required><br><br>
+        <label for="data_inicio">Data de Início:</label>
+        <input type="date" id="data_inicio" name="data_inicio" required><br><br>
+        <label for="data_fim">Data de Fim:</label>
+        <input type="date" id="data_fim" name="data_fim" required><br><br>
         <input type="submit" value="Processar">
     </form>
 </body>
