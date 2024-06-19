@@ -167,8 +167,8 @@ def processar_viagens(data_atual, token_autorizacao):
     return horarios_nao_batem_condicao
 
 def gerar_intervalo_datas(data_inicio, data_fim):
-    data_inicio = datetime.datetime.strptime(data_inicio, '%d/%m/%Y')
-    data_fim = datetime.datetime.strptime(data_fim, '%d/%m/%Y')
+    data_inicio = datetime.datetime.strptime(data_inicio, '%Y-%m-%d')
+    data_fim = datetime.datetime.strptime(data_fim, '%Y-%m-%d')
     intervalo = []
     while data_inicio <= data_fim:
         intervalo.append(data_inicio.strftime('%Y-%m-%d'))
@@ -185,6 +185,9 @@ def processar():
     data_inicio = request.form['data_inicio']
     data_fim = request.form['data_fim']
     
+    # Converte as datas para o formato 'YYYY-MM-DD' antes de passar para a função gerar_intervalo_datas
+    data_inicio = datetime.datetime.strptime(data_inicio, '%Y-%m-%d').strftime('%Y-%m-%d')
+    data_fim = datetime.datetime.strptime(data_fim, '%Y-%m-%d').strftime('%Y-%m-%d')
     
     intervalo_datas = gerar_intervalo_datas(data_inicio, data_fim)
     resultados_acumulados = []
