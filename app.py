@@ -21,7 +21,7 @@ def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_ba
             "Observação de viagens": mensagens_viagem,
             "Analsita": analistas,
         }
-        print(f"Adicionado: {lista_horarios_nao_batem}") 
+        #print(f"Adicionado: {lista_horarios_nao_batem}") 
         horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
 
 def processar_viagens(data_atual, token_autorizacao):
