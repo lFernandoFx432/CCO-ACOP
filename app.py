@@ -12,11 +12,21 @@ load_dotenv()  # Carregar variáveis de ambiente de um arquivo .env, se existir
 app = Flask(__name__)
 
 # Use a variável de ambiente REDIS_TLS_URL fornecida pelo Heroku
-app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
-app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
+redis_url = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
+
+app.config['CELERY_BROKER_URL'] = redis_url
+app.config['CELERY_RESULT_BACKEND'] = redis_url
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
+celery.conf.broker_transport_options = {
+    'ssl': {
+        'ssl_cert_reqs': 'required'
+    }
+}
+celery.conf.redis_backend_use_ssl = {
+    'ssl_cert_reqs': 'required'
+}
 
 @celery.task
 def processar_viagens_task(data_atual, token_autorizacao):
