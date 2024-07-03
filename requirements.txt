@@ -2,7 +2,7 @@ Flask
 requests
 pandas
 gunicorn
-celery
+Celery
 redis
 python-dotenv
 openpyxl
