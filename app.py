@@ -11,9 +11,9 @@ load_dotenv()  # Carregar variáveis de ambiente de um arquivo .env, se existir
 
 app = Flask(__name__)
 
-# Use a variável de ambiente REDIS_URL fornecida pelo Heroku
-app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+# Use a variável de ambiente REDIS_TLS_URL fornecida pelo Heroku
+app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
+app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
