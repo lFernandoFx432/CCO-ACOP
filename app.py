@@ -6,7 +6,11 @@ import pandas as pd
 import os
 
 app = Flask(__name__)
+app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_batem, data_gestão_de_falhas, horarios_nao_batem_condicao, falha, data_atual):
     mensagens_viagem = [obs["mensagem"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
     analistas = [obs["usuarioCriacao"]["nome"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
@@ -23,7 +27,7 @@ def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_ba
         }
         #print(f"Adicionado: {lista_horarios_nao_batem}") 
         horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
-
+@celery.task
 def processar_viagens(data_atual, token_autorizacao):
     data_inicial = f"{data_atual}"
     data_final = f"{data_atual}"
