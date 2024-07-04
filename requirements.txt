@@ -1,8 +1,5 @@
 Flask
 requests
 pandas
-gunicorn
-celery
-redis
-python-dotenv
 openpyxl
+gunicorn

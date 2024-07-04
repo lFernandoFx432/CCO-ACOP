@@ -1,39 +1,30 @@
-from flask import Flask, request, render_template, send_file, jsonify
+from flask import Flask, request, render_template, send_file
 import requests
 import json
 import datetime
 import pandas as pd
 import os
-from celery import Celery
-from dotenv import load_dotenv
-
-load_dotenv()  # Carregar variáveis de ambiente de um arquivo .env, se existir
 
 app = Flask(__name__)
 
-# Use a variável de ambiente REDIS_TLS_URL fornecida pelo Heroku
-redis_url = os.getenv('REDIS_TLS_URL', 'rediss://localhost:6379/0')
-
-app.config['broker_url'] = redis_url
-app.config['result_backend'] = redis_url
-
-celery = Celery(app.name)
-celery.conf.update(
-    broker_url=app.config['broker_url'],
-    result_backend=app.config['result_backend'],
-    broker_transport_options={
-        'ssl': {
-            'ssl_cert_reqs': 'required'
+def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_batem, data_gestão_de_falhas, horarios_nao_batem_condicao, falha, data_atual):
+    mensagens_viagem = [obs["mensagem"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
+    analistas = [obs["usuarioCriacao"]["nome"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
+    mensagem_valida = any(msg in lista_mensagens_validas for msg in mensagens_viagem)
+    data_atual_convertida = datetime.datetime.strptime(data_atual, "%Y-%m-%d").strftime("%d-%m-%Y")
+    if not mensagem_valida or not viagem["mensagemObs"]:
+        lista_horarios_nao_batem = {
+            "Data": data_atual_convertida,
+            "numeroLinha": viagem["trajeto"]["numeroLinha"],
+            "partidaPlan": viagem["partidaPlan"],
+            "Ocorrencia no gestão de falhas": falha["tipoFalha"]["descricaoFalha"],
+            "Observação de viagens": mensagens_viagem,
+            "Analsita": analistas,
         }
-    },
-    redis_backend_use_ssl={
-        'ssl_cert_reqs': 'required'
-    }
-)
+        print(f"Adicionado: {lista_horarios_nao_batem}") 
+        horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
 
-
-@celery.task
-def processar_viagens_task(data_atual, token_autorizacao):
+def processar_viagens(data_atual, token_autorizacao):
     data_inicial = f"{data_atual}"
     data_final = f"{data_atual}"
 
@@ -175,22 +166,6 @@ def processar_viagens_task(data_atual, token_autorizacao):
 
     return horarios_nao_batem_condicao
 
-def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_batem, data_gestão_de_falhas, horarios_nao_batem_condicao, falha, data_atual):
-    mensagens_viagem = [obs["mensagem"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
-    analistas = [obs["usuarioCriacao"]["nome"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
-    mensagem_valida = any(msg in lista_mensagens_validas for msg in mensagens_viagem)
-    data_atual_convertida = datetime.datetime.strptime(data_atual, "%Y-%m-%d").strftime("%d-%m-%Y")
-    if not mensagem_valida or not viagem["mensagemObs"]:
-        lista_horarios_nao_batem = {
-            "Data": data_atual_convertida,
-            "numeroLinha": viagem["trajeto"]["numeroLinha"],
-            "partidaPlan": viagem["partidaPlan"],
-            "Ocorrencia no gestão de falhas": falha["tipoFalha"]["descricaoFalha"],
-            "Observação de viagens": mensagens_viagem,
-            "Analsita": analistas,
-        }
-        horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
-
 def gerar_intervalo_datas(data_inicio, data_fim):
     data_inicio = datetime.datetime.strptime(data_inicio, '%d/%m/%Y')
     data_fim = datetime.datetime.strptime(data_fim, '%d/%m/%Y')
@@ -210,13 +185,33 @@ def processar():
     data_inicio = request.form['data_inicio']
     data_fim = request.form['data_fim']
     
+    
     intervalo_datas = gerar_intervalo_datas(data_inicio, data_fim)
     resultados_acumulados = []
 
     for data_atual in intervalo_datas:
-        processar_viagens_task.delay(data_atual, token_autorizacao)
+        resultados_dia = processar_viagens(data_atual, token_autorizacao)
+        resultados_acumulados.extend(resultados_dia)
 
-    return jsonify({'status': 'processing'}), 202
+    df_horarios_nao_batem_condicao = pd.DataFrame(resultados_acumulados)
+
+    # Clean DataFrame from unwanted spaces and newlines
+    df_horarios_nao_batem_condicao.replace(r'\n', '', regex=True, inplace=True)
+    df_horarios_nao_batem_condicao.replace(r'\r', '', regex=True, inplace=True)
+    df_horarios_nao_batem_condicao.replace(r'\s+', ' ', regex=True, inplace=True)
+
+    file_path = os.path.join(os.getcwd(), "horarios_nao_batem_condicao.xlsx")
+    df_horarios_nao_batem_condicao.to_excel(file_path, index=False, engine='openpyxl')
+
+    # Convert DataFrame to HTML
+    table_html = df_horarios_nao_batem_condicao.to_html(classes='data', index=False)
+
+    # Render the complete template with the DataFrame HTML
+    return render_template('complete.html', tables=table_html, download_link='/download_excel')
+
+@app.route('/complete')
+def complete():
+    return render_template('complete.html')
 
 @app.route('/download_excel')
 def download_excel():
