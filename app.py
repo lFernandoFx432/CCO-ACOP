@@ -4,15 +4,8 @@ import json
 import datetime
 import pandas as pd
 import os
-import signal
 
 app = Flask(__name__)
-
-class TimeoutException(Exception):
-    pass
-
-def timeout_handler(signum, frame):
-    raise TimeoutException
 
 def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_batem, data_gestão_de_falhas, horarios_nao_batem_condicao, falha, data_atual):
     mensagens_viagem = [obs["mensagem"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
@@ -28,7 +21,7 @@ def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_ba
             "Observação de viagens": mensagens_viagem,
             "Analsita": analistas,
         }
-        #print(f"Adicionado: {lista_horarios_nao_batem}") 
+        print(f"Adicionado: {lista_horarios_nao_batem}") 
         horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
 
 def processar_viagens(data_atual, token_autorizacao):
@@ -188,15 +181,7 @@ def gerar_intervalo_datas(data_inicio, data_fim):
 
 @app.route('/')
 def index():
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(150)  # Tempo limite em segundos
-    try:
-        # Lógica da sua aplicação
-        signal.alarm(0)  # Cancela o alarme se tudo der certo
-        return render_template('index.html')
-    except TimeoutException:
-        return 'Request timed out', 504
-    
+    return render_template('index.html')
 
 @app.route('/processar', methods=['POST'])
 def processar():
