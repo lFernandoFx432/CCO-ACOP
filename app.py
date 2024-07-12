@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, Response
 import requests
 import json
 import datetime
@@ -212,6 +212,7 @@ def processar():
         yield render_template('complete.html', tables=table_html, download_link='/download_excel')
     
     return Response(generate(), content_type='text/html')
+
 
 
 @app.route('/complete')
