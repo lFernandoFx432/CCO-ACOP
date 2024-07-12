@@ -8,6 +8,12 @@ import signal
 
 app = Flask(__name__)
 
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException
+
 def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_batem, data_gestão_de_falhas, horarios_nao_batem_condicao, falha, data_atual):
     mensagens_viagem = [obs["mensagem"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
     analistas = [obs["usuarioCriacao"]["nome"] for obs in viagem["mensagemObs"]] if viagem["mensagemObs"] else []
