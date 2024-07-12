@@ -24,7 +24,7 @@ def comparar_penalizacoes(viagem, lista_mensagens_validas, lista_horarios_nao_ba
         print(f"Adicionado: {lista_horarios_nao_batem}") 
         horarios_nao_batem_condicao.append(lista_horarios_nao_batem)
 
-def processar_viagens(data_atual, token_autorizacao):
+def processar_viagens(data_atual, token_autorizacao, session):
     data_inicial = f"{data_atual}"
     data_final = f"{data_atual}"
 
@@ -185,29 +185,34 @@ def processar():
     data_inicio = request.form['data_inicio']
     data_fim = request.form['data_fim']
     
-    
     intervalo_datas = gerar_intervalo_datas(data_inicio, data_fim)
-    resultados_acumulados = []
+    
+    def generate():
+        session = requests.Session()
+        resultados_acumulados = []
+        for data_atual in intervalo_datas:
+            resultados_dia = processar_viagens(data_atual, token_autorizacao, session)
+            resultados_acumulados.extend(resultados_dia)
+            yield f"Processando data: {data_atual}\n"
+        
+        df_horarios_nao_batem_condicao = pd.DataFrame(resultados_acumulados)
+        
+        # Clean DataFrame from unwanted spaces and newlines
+        df_horarios_nao_batem_condicao.replace(r'\n', '', regex=True, inplace=True)
+        df_horarios_nao_batem_condicao.replace(r'\r', '', regex=True, inplace=True)
+        df_horarios_nao_batem_condicao.replace(r'\s+', ' ', regex=True, inplace=True)
 
-    for data_atual in intervalo_datas:
-        resultados_dia = processar_viagens(data_atual, token_autorizacao)
-        resultados_acumulados.extend(resultados_dia)
+        file_path = os.path.join(os.getcwd(), "horarios_nao_batem_condicao.xlsx")
+        df_horarios_nao_batem_condicao.to_excel(file_path, index=False, engine='openpyxl')
 
-    df_horarios_nao_batem_condicao = pd.DataFrame(resultados_acumulados)
+        # Convert DataFrame to HTML
+        table_html = df_horarios_nao_batem_condicao.to_html(classes='data', index=False)
 
-    # Clean DataFrame from unwanted spaces and newlines
-    df_horarios_nao_batem_condicao.replace(r'\n', '', regex=True, inplace=True)
-    df_horarios_nao_batem_condicao.replace(r'\r', '', regex=True, inplace=True)
-    df_horarios_nao_batem_condicao.replace(r'\s+', ' ', regex=True, inplace=True)
+        # Render the complete template with the DataFrame HTML
+        yield render_template('complete.html', tables=table_html, download_link='/download_excel')
+    
+    return Response(generate(), content_type='text/html')
 
-    file_path = os.path.join(os.getcwd(), "horarios_nao_batem_condicao.xlsx")
-    df_horarios_nao_batem_condicao.to_excel(file_path, index=False, engine='openpyxl')
-
-    # Convert DataFrame to HTML
-    table_html = df_horarios_nao_batem_condicao.to_html(classes='data', index=False)
-
-    # Render the complete template with the DataFrame HTML
-    return render_template('complete.html', tables=table_html, download_link='/download_excel')
 
 @app.route('/complete')
 def complete():
