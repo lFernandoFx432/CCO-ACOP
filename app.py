@@ -189,7 +189,7 @@ def gerar_intervalo_datas(data_inicio, data_fim):
 @app.route('/')
 def index():
     signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(50)  # Tempo limite em segundos
+    signal.alarm(150)  # Tempo limite em segundos
     try:
         # Lógica da sua aplicação
         signal.alarm(0)  # Cancela o alarme se tudo der certo
