@@ -4,6 +4,7 @@ import json
 import datetime
 import pandas as pd
 import os
+import signal
 
 app = Flask(__name__)
 
@@ -181,7 +182,15 @@ def gerar_intervalo_datas(data_inicio, data_fim):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(50)  # Tempo limite em segundos
+    try:
+        # Lógica da sua aplicação
+        signal.alarm(0)  # Cancela o alarme se tudo der certo
+        return render_template('index.html')
+    except TimeoutException:
+        return 'Request timed out', 504
+    
 
 @app.route('/processar', methods=['POST'])
 def processar():
